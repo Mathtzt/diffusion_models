@@ -2,11 +2,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
-
 from PIL import Image
+from datetime import datetime
 
 import torch
-
 import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 
@@ -15,16 +14,6 @@ class DiffusionUtils:
     @staticmethod
     def get_device_available():
         return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    @staticmethod
-    def save(model, dirpath: str, filename: str = 'model_gan.pt'):
-        model_scripted = torch.jit.script(model) # Exportando para TorchScript
-        model_scripted.save(f'{dirpath}/{filename}')
-
-    @staticmethod
-    def load(model_path: str):
-
-        return torch.jit.load(model_path) # Ex.: model_scripted.pt
 
     @staticmethod
     def unorm(x):
@@ -128,6 +117,11 @@ class DiffusionUtils:
         return transform
     
     @staticmethod
+    def perturb_input(x, t, ab_t, noise):
+        # Função necessária para criar uma perturbação na imagem com um específico nível de ruído
+        return ab_t.sqrt()[t, None, None, None] * x + (1 - ab_t[t, None, None, None]) * noise
+    
+    @staticmethod
     def plot_sample(x_gen_store, n_sample, nrows, save_dir, fn,  w, save = False):
         ncols = n_sample//nrows
         # change to Numpy image format (h,w,channels) vs (channels,h,w)
@@ -155,9 +149,9 @@ class DiffusionUtils:
         plt.close()
         
         if save:
-            ani.save(save_dir + f"{fn}_w{w}.gif", dpi=100, writer=PillowWriter(fps=5))
+            ani.save(save_dir + f"{fn}.gif", dpi=100, writer=PillowWriter(fps=5))
 
-            print('saved gif at ' + save_dir + f"{fn}_w{w}.gif")
+            print('saved gif at ' + save_dir + f"{fn}.gif")
 
         return ani
 
@@ -174,3 +168,29 @@ class DiffusionUtils:
                 plots.append(axs[row, col].imshow(store[i, (row*ncols) +col]))
 
         return plots
+    
+    @staticmethod
+    def create_folder(path, name, use_date = False):
+        """
+        Método responsável por criar a pasta no diretório passado como parâmetro.
+        """
+        if use_date:
+            dt = datetime.now()
+            day = dt.strftime("%d")
+            mes = dt.strftime("%m")
+            hour = dt.strftime("%H")
+            mm = dt.strftime("%M")
+            dirname_base = f"{day}{mes}_{hour}{mm}_"
+            directory = dirname_base + name
+        else:
+            directory = name
+
+        parent_dir = path
+
+        full_path = os.path.join(parent_dir, directory)
+
+        if os.path.isdir(full_path):
+            return full_path
+        else:
+            os.mkdir(full_path)
+            return full_path

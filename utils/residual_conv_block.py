@@ -43,8 +43,8 @@ class ResidualConvBlock(nn.Module):
                 out = x + x2
             else:
                 # Se não, aplicar uma camada convolucional 1x1 para ajustar as dimensões antes de adicionar a conexão residual
-                shortcut = nn.Conv2d(x.shape[1], 
-                                     x2.shape[1], 
+                shortcut = nn.Conv2d(in_channels = x.shape[1], 
+                                     out_channels = x2.shape[1], 
                                      kernel_size=1, 
                                      stride=1, 
                                      padding=0).to(x.device)
